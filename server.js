@@ -37,25 +37,31 @@ app.post('/api/download', async (req, res) => {
 
 // API Proxy សម្រាប់ទាញយកវីដេអូកាត់ផ្តាច់បញ្ហា CORS របស់ Facebook
 app.get('/api/proxy-download', async (req, res) => {
-    const videoUrl = req.query.url;
-    if (!videoUrl) {
-        return res.status(400).send('Missing video URL');
-    }
-
     try {
-        const response = await axios({
-            method: 'GET',
-            url: videoUrl,
-            responseType: 'stream'
-        });
+        const videoUrl = req.query.url;
+        // ទាញយក filename ពី Frontend មក (បើគ្មាន ប្រើ facebook-video ជំនួស)
+        let filename = req.query.filename ? req.query.filename + '.mp4' : 'facebook-video.mp4';
+        
+        // Encode ឈ្មោះ file ដើម្បីការពារបញ្ហាអក្សរខ្មែរ
+        const encodedFilename = encodeURIComponent(filename);
 
-        res.setHeader('Content-Disposition', 'attachment; filename="facebook-video.mp4"');
+        const response = await fetch(videoUrl);
+        if (!response.ok) throw new Error('Failed to fetch video');
+
+        // កំណត់ Header ឱ្យ Browser ចាំបាច់ត្រូវ Save តាមឈ្មោះនេះ
+        res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodedFilename}`);
         res.setHeader('Content-Type', 'video/mp4');
 
-        response.data.pipe(res);
+        const reader = response.body.getReader();
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            res.write(value);
+        }
+        res.end();
     } catch (error) {
         console.error(error);
-        res.status(500).send('មិនអាចទាញយកវីដេអូនេះបានទេ!');
+        res.status(500).send('Download failed');
     }
 });
 
