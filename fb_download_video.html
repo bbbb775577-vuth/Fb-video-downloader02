@@ -165,22 +165,25 @@
             }
         }
 
-        function downloadVideoFile() {
-            if (!directVideoUrl) return;
-            
-            // កាត់អក្សរខុសច្បាប់ចេញពីឈ្មោះ File
-            let safeTitle = currentVideoTitle.replace(/[/\\?%*:|"<>]/g, '').trim();
-            if (!safeTitle) safeTitle = "facebook-video";
+function downloadVideoFile() {
+    if (!directVideoUrl) return;
 
-            // បញ្ជូន filename ទៅកាន់ server.js
-            const proxyUrl = `https://fb-video-downloader02.onrender.com/api/proxy-download?url=${encodeURIComponent(directVideoUrl)}&filename=${encodeURIComponent(safeTitle)}`;
-            
-            const a = document.createElement('a');
-            a.href = proxyUrl;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
+    // លុប Emojis និងសញ្ញាខុសច្បាប់ចេញពីឈ្មោះ File
+    let safeTitle = currentVideoTitle
+        .replace(/([\uE000-\uF8FF]|\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDDFF]|\uD83E[\uDD00-\uDDFF])/g, '')
+        .replace(/[/\\?%*:|"<>]/g, '')
+        .trim();
+
+    if (!safeTitle) safeTitle = "facebook-video";
+
+    const proxyUrl = `https://fb-video-downloader02.onrender.com/api/proxy-download?url=${encodeURIComponent(directVideoUrl)}&filename=${encodeURIComponent(safeTitle)}`;
+
+    const a = document.createElement('a');
+    a.href = proxyUrl;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
 
         document.getElementById('pasteBtn').addEventListener('click', async () => {
             try {
